@@ -9,7 +9,7 @@ import javax.persistence.*;
 import java.time.LocalDateTime;
 
 @Setter @Getter
-@ToString
+@ToString(exclude = "todoList")
 @EqualsAndHashCode
 @NoArgsConstructor
 @AllArgsConstructor

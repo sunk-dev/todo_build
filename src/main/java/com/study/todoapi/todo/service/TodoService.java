@@ -6,6 +6,8 @@ import com.study.todoapi.todo.dto.response.TodoDetailResponseDTO;
 import com.study.todoapi.todo.dto.response.TodoListResponseDTO;
 import com.study.todoapi.todo.entity.Todo;
 import com.study.todoapi.todo.repository.TodoRepository;
+import com.study.todoapi.user.entity.User;
+import com.study.todoapi.user.repoistory.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -22,20 +24,35 @@ import java.util.stream.Collectors;
 public class TodoService {
 
     private final TodoRepository todoRepository;
+    private final UserRepository userRepository;
 
     // 할 일 등록
-    public TodoListResponseDTO create(TodoCreateRequestDTO dto) {
-        todoRepository.save(dto.toEntity());
+    public TodoListResponseDTO create(TodoCreateRequestDTO dto, String email) {
+
+        Optional<User> foundUser = userRepository.findByEmail(email);
+
+        foundUser.ifPresent(user -> {
+            Todo todo = todoRepository.save(dto.toEntity(user));
+            //양방향 매핑에서 한쪽이 수정(삽입,삭제)되면 반대편에서는 수동으로 갱신을 해줘야함.
+            user.addTodo(todo);
+        });
         log.info("새로운 할 일이 저장되었습니다. 제목: {}", dto.getTitle());
 
-        return retrieve();
+        return retrieve(email);
     }
 
 
     // 할 일 목록 불러오기
-    public TodoListResponseDTO retrieve() {
+    public TodoListResponseDTO retrieve(String email) {
 
-        List<Todo> todoList = todoRepository.findAll();
+//        List<Todo> todoList = todoRepository.findAll();
+//        List<Todo> todoList = todoRepository.findAllByUser(userRepository.findByEmail(email).get());
+
+        User user = userRepository.findByEmail(email).orElseThrow(
+                () -> new RuntimeException("유저정보가 없습니다!")
+        );
+
+        List<Todo> todoList = user.getTodoList();
 
         // 엔터티 리스트를 DTO리스트로 매핑
         List<TodoDetailResponseDTO> dtoList = todoList.stream()
@@ -48,20 +65,27 @@ public class TodoService {
     }
 
     // 할 일 삭제
-    public TodoListResponseDTO delete(String id) {
+    public TodoListResponseDTO delete(String id, String email) {
 
         try {
+            Todo todo = todoRepository.findById(id).orElseThrow();
+
+            //양방향에서는 반대편 리스트는 수종으로 갱신해야함.
+            User user = userRepository.findByEmail(email).orElseThrow();
+            user.getTodoList().remove(todo);
+
             todoRepository.deleteById(id);
+
         } catch (Exception e) {
             log.error("id가 존재하지 않아 삭제에 실패했습니다. - ID: {}, error: {}",
                     id, e.getMessage());
             throw new RuntimeException("삭제에 실패했습니다!!");
         }
-        return retrieve();
+        return retrieve(email);
     }
 
     // 할 일 체크 처리
-    public TodoListResponseDTO check(TodoCheckRequestDTO dto) {
+    public TodoListResponseDTO check(TodoCheckRequestDTO dto, String email) {
 
         Optional<Todo> target = todoRepository.findById(dto.getId());
 
@@ -70,7 +94,7 @@ public class TodoService {
             todoRepository.save(todo);
         });
 
-        return retrieve();
+        return retrieve(email);
     }
 
 }
