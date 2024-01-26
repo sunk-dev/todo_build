@@ -6,6 +6,7 @@ import com.study.todoapi.todo.dto.response.TodoDetailResponseDTO;
 import com.study.todoapi.todo.dto.response.TodoListResponseDTO;
 import com.study.todoapi.todo.entity.Todo;
 import com.study.todoapi.todo.repository.TodoRepository;
+import com.study.todoapi.user.entity.Role;
 import com.study.todoapi.user.entity.User;
 import com.study.todoapi.user.repoistory.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +33,13 @@ public class TodoService {
         Optional<User> foundUser = userRepository.findByEmail(email);
 
         foundUser.ifPresent(user -> {
+            //권한에 따른 글쓰기제한 처리
+            //일반회원(COMMON)이 5개 초과의 일정을 등록하면 예외를 발생시킨다.
+            if(user.getRole()== Role.COMMON
+            && user.getTodoList().size()>=5){
+                throw  new IllegalStateException("일반회원은 더이상 일정을 작성할수 없습니다.");
+
+            }
             Todo todo = todoRepository.save(dto.toEntity(user));
             //양방향 매핑에서 한쪽이 수정(삽입,삭제)되면 반대편에서는 수동으로 갱신을 해줘야함.
             user.addTodo(todo);

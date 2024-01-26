@@ -3,6 +3,7 @@ package com.study.todoapi.config;
 import com.study.todoapi.todo.filter.JwtAuthFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -37,6 +38,7 @@ public class WebSecurityConfig {
                 .and()
                 // 어떤 요청에서는 인증을하고 어떤 요청에서는 인증을 안할 건지 설정
                 .authorizeRequests() // 어떤 요청에서 인증을 할 거냐??
+                .antMatchers(HttpMethod.PUT,"/api/auth/promote").hasRole("COMMON")
                 .antMatchers("/", "/api/auth/**").permitAll() // 이 요청은 인증을 안해도 됨!
                 //.antMatchers(HttpMethod.POST, "/api/todos").permitAll()
                 //.antMatchers("/**").hasRole("ADMIN")
