@@ -13,8 +13,14 @@ import com.study.todoapi.user.entity.User;
 import com.study.todoapi.user.repoistory.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.UUID;
 
 @Service
 @Slf4j
@@ -24,6 +30,9 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final TokenProvider tokenProvider;
+    
+    @Value("${upload.path}")
+    private String roothPath; // 파일 저장루트 경로
 
     // 회원가입 처리
     public UserSignUpResponseDTO create(UserSignUpRequestDTO dto) {
@@ -99,5 +108,28 @@ public class UserService {
 
         return new LoginResponseDTO(saved, token);
 
+    }
+
+    /**
+     * 업로드한 프로필사진을 서버에 저장하고 저장된 경로를 리턴
+     * @param originalFile -> 업로드된 파일의 정보객체
+     * @return -> 실제로 이미지가 저장된 서버의 디렉토리 경로
+     */
+    public String uploadProfileImage(MultipartFile originalFile) throws IOException {
+        //루트 디렉토리 존재하는지확인후 존재하지 않으면 생성한다.
+        File rootDir = new File(roothPath);
+
+        if(!rootDir.exists()) rootDir.mkdirs();
+
+        //파일명을 유니크하게 변경
+        String uniqueFileName = UUID.randomUUID() + "_" + originalFile.getOriginalFilename();
+
+        //파일을 서버에 저장
+        File uploadFile = new File(roothPath + "/" + uniqueFileName);
+        originalFile.transferTo(uploadFile);
+
+        return uniqueFileName;
+        
+        
     }
 }

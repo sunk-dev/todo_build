@@ -27,3 +27,6 @@ logging:
 
 jwt:
   secret: SJlE3ZwV0ognJAnF5c8AhfJikP54ml5M1xQZggQQR5YwgM+GW/ZbqvQMnBCI3IIrtO1CDJyxUphrntExyU99nA==
+
+upload:
+  path: D:/spring-prj/upload

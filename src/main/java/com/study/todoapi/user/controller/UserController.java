@@ -17,6 +17,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @Slf4j
@@ -28,14 +29,17 @@ public class UserController {
     private final UserService userService;
 
     // 회원가입 요청처리
-    @PostMapping
+    @PostMapping()
     public ResponseEntity<?> signUp(
-            @Validated @RequestBody UserSignUpRequestDTO dto
+            @Validated @RequestPart("user") UserSignUpRequestDTO dto
+            ,@RequestPart("profileImage")MultipartFile profileImg
             , BindingResult result
             ) {
 
-        log.info("/api/auth POST! - {}", dto);
-
+        log.info("/api/auth POST! - {},", dto);
+        if(profileImg!=null){
+            log.info("file-name{}",profileImg.getOriginalFilename());
+        }
         if (result.hasErrors()) {
             log.warn(result.toString());
             return ResponseEntity
