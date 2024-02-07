@@ -16,7 +16,15 @@ import java.time.LocalDateTime;
 @Builder
 @Entity
 @Table(name = "tbl_todo")
-public class Todo {
+public class
+
+
+
+
+
+
+
+Todo {
 
     @Id
     @GeneratedValue(generator = "system-uuid")

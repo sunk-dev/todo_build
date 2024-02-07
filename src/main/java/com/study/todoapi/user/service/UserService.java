@@ -2,6 +2,7 @@ package com.study.todoapi.user.service;
 
 import com.study.todoapi.auth.TokenProvider;
 import com.study.todoapi.auth.TokenUserInfo;
+import com.study.todoapi.aws.S3Service;
 import com.study.todoapi.exception.DuplicatedEmailException;
 import com.study.todoapi.exception.NoRegisteredArgumentsException;
 import com.study.todoapi.user.dto.request.LoginRequestDTO;
@@ -30,12 +31,13 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final TokenProvider tokenProvider;
+    private final S3Service s3Service;
     
     @Value("${upload.path}")
     private String roothPath; // 파일 저장루트 경로
 
     // 회원가입 처리
-    public UserSignUpResponseDTO create(UserSignUpRequestDTO dto) {
+    public UserSignUpResponseDTO create(UserSignUpRequestDTO dto,String profilePath) {
 
         if (dto == null) {
             throw new NoRegisteredArgumentsException("회원가입 입력정보가 없습니다!");
@@ -47,7 +49,7 @@ public class UserService {
             throw new DuplicatedEmailException("중복된 이메일입니다!!");
         }
 
-        User saved = userRepository.save(dto.toEntity(passwordEncoder));
+        User saved = userRepository.save(dto.toEntity(passwordEncoder,profilePath));
 
         log.info("회원가입 성공!! saved user - {}", saved);
 
@@ -117,19 +119,29 @@ public class UserService {
      */
     public String uploadProfileImage(MultipartFile originalFile) throws IOException {
         //루트 디렉토리 존재하는지확인후 존재하지 않으면 생성한다.
-        File rootDir = new File(roothPath);
+//        File rootDir = new File(roothPath);
 
-        if(!rootDir.exists()) rootDir.mkdirs();
+//        if(!rootDir.exists()) rootDir.mkdirs();
 
         //파일명을 유니크하게 변경
         String uniqueFileName = UUID.randomUUID() + "_" + originalFile.getOriginalFilename();
 
         //파일을 서버에 저장
-        File uploadFile = new File(roothPath + "/" + uniqueFileName);
-        originalFile.transferTo(uploadFile);
+//        File uploadFile = new File(roothPath + "/" + uniqueFileName);
+//        originalFile.transferTo(uploadFile);
+        // 파일일 s3bucket에 저장
+        String uploadURL = s3Service.uploadToS3Bucket(originalFile.getBytes(), uniqueFileName);
+        return uploadURL;
+        
+        
+    }
 
-        return uniqueFileName;
-        
-        
+    // 로그인한 회원의 프로필 사진 저장경로를 조회
+    public String getProfilePath(String email){
+        // db에서 파일명을 조회함
+        User user = userRepository.findByEmail(email).orElseThrow();
+        String fileName = user.getProfileImg();
+        return roothPath+"/"+fileName;
+
     }
 }
